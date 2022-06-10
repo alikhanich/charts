@@ -17,11 +17,14 @@ kind: Ingress
 metadata:
   name: {{ $fullName }}
   labels:
-    {{- include "gangway.labels" . | nindent 4 }}
-  {{- with .Values.ingress.annotations }}
+    app.kubernetes.io/name: {{ include "gangway.name" . }}
+    helm.sh/chart: {{ include "gangway.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- with .Values.ingress.annotations }}
   annotations:
-    {{- toYaml . | nindent 4 }}
-  {{- end }}
+{{ toYaml . | indent 4 }}
+{{- end }}
 spec:
 {{- if and .Values.ingress.className (semverCompare ">=1.18-0" .Capabilities.KubeVersion.GitVersion) }}
   ingressClassName: {{ .Values.ingress.className }}
@@ -38,14 +41,12 @@ spec:
 {{- end }}
   rules:
   {{- range .Values.ingress.hosts }}
-    - host: {{ .host | quote }}
+    - host: {{ . | quote }}
       http:
         paths:
-        {{- range .paths }}
-          - path: {{ . }}
+          - path: {{ $ingressPath }}
             backend:
-              serviceName: {{ $fullName }}
-              servicePort: {{ $svcPort }}
-        {{- end }}
+              serviceName: {{ $fullName }}svc
+              servicePort: http
   {{- end }}
 {{- end }}

@@ -1,14 +1,9 @@
-apiVersion: v2
+apiVersion: v1
+description: DEPRECATED An application that can be used to easily enable authentication flows via OIDC for a kubernetes cluster.
 name: gangway
 version: 0.0.1
-description: An application that can be used to easily enable authentication flows via OIDC for a kubernetes cluster.
-type: application
+appVersion: 3.3.0
 home: https://github.com/heptiolabs/gangway
-keywords:
-  - authentication
-  - k8s
-  - oidc
-maintainers:
-  - name: gabibbo97
-    email: gabibbo97@gmail.com
-appVersion: v3.2.0
+sources:
+- https://github.com/heptiolabs/gangway
+deprecated: false

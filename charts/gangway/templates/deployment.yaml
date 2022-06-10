@@ -3,107 +3,116 @@ kind: Deployment
 metadata:
   name: {{ include "gangway.fullname" . }}
   labels:
-    {{- include "gangway.labels" . | nindent 4 }}
+    app.kubernetes.io/name: {{ include "gangway.name" . }}
+    helm.sh/chart: {{ include "gangway.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "gangway.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/name: {{ include "gangway.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
-      annotations:
-        kubernetes.io/configuration-checksum: {{ .Values.config | toYaml | sha256sum | trunc 32 }}
       labels:
-        {{- include "gangway.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "gangway.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+      annotations:
+        check/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        check/values: {{ .Files.Get   "../values.yaml"   | sha256sum }}
+{{- if .Values.podAnnotations }}
+{{ toYaml .Values.podAnnotations | trim | indent 8 }}  
+{{- end }}
     spec:
-      enableServiceLinks: false
-    {{- with .Values.imagePullSecrets }}
+      {{- if ne .Values.gangway.serviceAccountName "" }}
+      serviceAccountName: {{ .Values.gangway.serviceAccountName }}
+      {{- end }}
+      {{- if .Values.image.pullSecrets }}
       imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-    {{- end }}
-      serviceAccountName: {{ include "gangway.serviceAccountName" . }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
-      {{- if .Values.priorityClassName }}
-      priorityClassName: {{ .Values.priorityClassName | quote }}
+{{ toYaml .Values.image.pullSecrets | indent 8 }}
       {{- end }}
-      volumes:
-        - name: config
-          configMap:
-            name: {{ include "gangway.fullname" . }}
-        {{- if or .Values.trustedCA.content .Values.trustedCA.secretName }}
-        - name: trusted-ca
-          secret:
-            secretName: {{ if .Values.trustedCA.secretName }}{{ .Values.trustedCA.secretName }}{{ else }}{{ include "gangway.fullname" . }}-trusted-ca{{ end }}
-            items:
-              - key: tls.crt
-                path: tls.crt
-        {{- end }}
-        {{- if .Values.customHTMLTemplates.enabled }}
-        - name: templates
-          configMap:
-            name: {{ include "gangway.fullname" . }}-templates
-        {{- end}}
       containers:
-        - name: {{ .Chart.Name }}
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command:
-            - /bin/gangway
-          args:
-            - --config
-            - /etc/gangway/config/gangway.yaml
-          ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
-          envFrom:
-            - configMapRef:
-                name: {{ include "gangway.fullname" . }}-env
-            - secretRef:
-                {{- if .Values.existingSecret }}
-                name: {{ .Values.existingSecret }}
-                {{- else }}
-                name: {{ include "gangway.fullname" . }}
-                {{- end }}
-          volumeMounts:
-            - name: config
-              mountPath: /etc/gangway/config
-            {{- if or .Values.trustedCA.content .Values.trustedCA.secretName }}
-            - name: trusted-ca
-              mountPath: /etc/gangway/trusted-ca
-            {{- end }}
-            {{- if .Values.customHTMLTemplates.enabled }}
-            - name: templates
-              mountPath: /etc/gangway/templates
-            {{- end }}
-          livenessProbe:
-            httpGet:
-              path: /login
-              port: http
-              httpHeaders:
-                - name: X-K8S-HEALTH-CHECK
-                  value: live
-          readinessProbe:
-            httpGet:
-              path: /login
-              port: http
-              httpHeaders:
-                - name: X-K8S-HEALTH-CHECK
-                  value: ready
-          resources:
-            {{- toYaml .Values.resources | nindent 12 }}
-      {{- with .Values.nodeSelector }}
+      - name: {{ .Chart.Name }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - gangway
+        - -config
+        - /gangway/gangway.yaml
+        env:
+{{- if not .Values.env.GANGWAY_SESSION_SECURITY_KEY }}
+        - name: GANGWAY_SESSION_SECURITY_KEY
+          valueFrom:
+            secretKeyRef:
+              key: sessionkey
+              name: {{ include "gangway.fullname" . }}-key
+{{- end }}
+{{- range $k, $v := .Values.env }}
+        - name: {{ $k }}
+          value: {{ $v }}
+{{- end }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.gangway.port }}
+          protocol: TCP
+        volumeMounts:
+        - name: gangway
+          mountPath: /gangway/
+      {{- if or (and .Values.tls.certData .Values.tls.keyData) .Values.tls.existingSecret }}
+        - name: gangway-tls
+          mountPath: /etc/gangway/tls/
+          readOnly: true
+      {{ end }}
+{{- if .Values.extraVolumeMounts }}
+{{ toYaml .Values.extraVolumeMounts | trim | indent 8 }}
+{{- end }}
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: {{ .Values.gangway.httpPath }}
+            port: {{ .Values.gangway.port }}
+            scheme: {{ .Values.livenessProbe.scheme }}
+          initialDelaySeconds: 20
+          periodSeconds: 60
+          successThreshold: 1
+          timeoutSeconds: 1
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: {{ .Values.gangway.httpPath }}
+            port: {{ .Values.gangway.port }}
+            scheme: {{ .Values.readinessProbe.scheme }}
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+    {{- with .Values.nodeSelector }}
       nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+{{ toYaml . | indent 8 }}
+    {{- end }}
     {{- with .Values.affinity }}
       affinity:
-        {{- toYaml . | nindent 8 }}
+{{ toYaml . | indent 8 }}
     {{- end }}
     {{- with .Values.tolerations }}
       tolerations:
-        {{- toYaml . | nindent 8 }}
+{{ toYaml . | indent 8 }}
     {{- end }}
+      volumes:
+      - name: gangway
+        configMap:
+          name: {{ include "gangway.fullname" . }}
+      {{- if and .Values.tls.certData .Values.tls.keyData }}
+      - name: gangway-tls
+        secret:
+          secretName: {{ include "gangway.fullname" . }}-tls
+      {{ else if .Values.tls.existingSecret }}
+      - name: gangway-tls
+        secret:
+          secretName: {{ .Values.tls.existingSecret }}
+      {{ end -}}
+{{- if .Values.extraVolumes }}
+{{ toYaml .Values.extraVolumes | trim | indent 6 }}
+{{- end }}
