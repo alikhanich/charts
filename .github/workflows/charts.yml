@@ -28,12 +28,11 @@ jobs:
           sh ./scripts/build-repo.sh
       - name: GitHub Pages action
         uses: peaceiris/actions-gh-pages@v3.7.3
-        env:
-          ACTIONS_DEPLOY_KEY: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          PUBLISH_BRANCH: gh-pages
-          PUBLISH_DIR: ./repo
         with:
-          forceOrphan: true
+          publish_branch: gh-pages
+          force_orphan: true
+          publish_dir: ./repo
+          personal_token: ${{ secrets.PERSONAL_TOKEN }}
 
   helm-lint:
     runs-on: ubuntu-latest
