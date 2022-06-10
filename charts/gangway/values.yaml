@@ -103,7 +103,7 @@ config:
   emailClaim: email
   # Security key
   # CHANGE THIS
-  sessionSecurityKey: verySecureKey
+  sessionSecurityKey: verySecureKey1
 
 # if there is already an existingSecret holding sessionSecurityKey and clientSecret, define it here
 # secret must contain following keys: GANGWAY_CLIENT_SECRET, SESSION_SECURITY_KEY
