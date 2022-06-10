@@ -1,0 +1,56 @@
+apiVersion: v1
+entries:
+  gangway:
+  - apiVersion: v1
+    appVersion: 3.3.0
+    created: "2022-06-10T13:53:25.375577026Z"
+    description: DEPRECATED An application that can be used to easily enable authentication
+      flows via OIDC for a kubernetes cluster.
+    digest: 590bfa8f2276cfd994e4a3f7aa3a03ee04bcd47228d7bc30c61cddf8f8946684
+    home: https://github.com/heptiolabs/gangway
+    name: gangway
+    sources:
+    - https://github.com/heptiolabs/gangway
+    urls:
+    - gangway-0.0.4.tgz
+    version: 0.0.4
+  - apiVersion: v1
+    appVersion: 3.3.0
+    created: "2022-06-10T13:53:25.374824604Z"
+    description: DEPRECATED An application that can be used to easily enable authentication
+      flows via OIDC for a kubernetes cluster.
+    digest: 9877e58de9141b71b13696e80cc10b8cbb7c360a841af7acca6258dc8a197cdc
+    home: https://github.com/heptiolabs/gangway
+    name: gangway
+    sources:
+    - https://github.com/heptiolabs/gangway
+    urls:
+    - gangway-0.0.3.tgz
+    version: 0.0.3
+  - apiVersion: v1
+    appVersion: 3.3.0
+    created: "2022-06-10T13:53:25.374130485Z"
+    description: DEPRECATED An application that can be used to easily enable authentication
+      flows via OIDC for a kubernetes cluster.
+    digest: 8b70aae6a47947dab1504f8f4fcae38dab580b9b70159b60b314b35f111848c9
+    home: https://github.com/heptiolabs/gangway
+    name: gangway
+    sources:
+    - https://github.com/heptiolabs/gangway
+    urls:
+    - gangway-0.0.2.tgz
+    version: 0.0.2
+  - apiVersion: v1
+    appVersion: 3.3.0
+    created: "2022-06-10T13:53:25.372342634Z"
+    description: DEPRECATED An application that can be used to easily enable authentication
+      flows via OIDC for a kubernetes cluster.
+    digest: 773f2d76cfe75b08d766413c4abee2852a5d9e2ad57859bf40ec93f9415b4c24
+    home: https://github.com/heptiolabs/gangway
+    name: gangway
+    sources:
+    - https://github.com/heptiolabs/gangway
+    urls:
+    - gangway-0.0.1.tgz
+    version: 0.0.1
+generated: "2022-06-10T13:53:25.3711557Z"
